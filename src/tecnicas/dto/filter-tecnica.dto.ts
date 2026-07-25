@@ -17,5 +17,9 @@ export class FilterTecnicaDto {
 
   @IsOptional()
   @IsString()
+  modalidad?: 'gi' | 'nogi' | 'ambos';
+
+  @IsOptional()
+  @IsString()
   tag?: string;
 }

@@ -9,8 +9,14 @@ export class CreateTecnicaDto {
   @IsNotEmpty()
   nota!: string;
 
+  @IsOptional()
   @IsBoolean()
-  gi!: boolean;
+  gi?: boolean;
+
+  @IsOptional()
+  @IsString()
+  modalidad?: 'gi' | 'nogi' | 'ambos';
+
 
   @IsArray()
   @IsString({ each: true })

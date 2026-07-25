@@ -3,7 +3,8 @@ export class Tecnica {
   userId?: string;
   nombre!: string;  
   nota!: string;
-  gi!: boolean;
+  gi?: boolean;
+  modalidad?: 'gi' | 'nogi' | 'ambos';
   tag!: string[];
   videoUrl?: string;
   conexiones?: string[];

@@ -18,7 +18,8 @@ export class TecnicasFirebaseRepository implements TecnicasRepository {
       userId,
       nombre: datos.nombre,
       nota: datos.nota,
-      gi: datos.gi,
+      gi: datos.gi !== undefined ? datos.gi : (datos.modalidad === 'gi'),
+      modalidad: datos.modalidad || (datos.gi !== false ? 'gi' : 'nogi'),
       tag: datos.tag || [],
       videoUrl: datos.videoUrl || null,
       conexiones: datos.conexiones || [],
@@ -37,17 +38,23 @@ export class TecnicasFirebaseRepository implements TecnicasRepository {
   async findAll(userId: string, filtros?: FilterTecnicaDto): Promise<Tecnica[]> {
     let query: FirebaseFirestore.Query = this.firebaseService.firestore.collection(this.collectionName).where('userId', '==', userId);
     
-    if (filtros) {
-      if (filtros.gi !== undefined) {
-        const isGi = filtros.gi.toString() === 'true';
-        query = query.where('gi', '==', isGi);
-      }
-    }
-    
     const snapshot = await query.get();
     let resultados = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Tecnica[];
 
     if (filtros) {
+      if (filtros.modalidad) {
+        if (filtros.modalidad === 'gi') {
+          resultados = resultados.filter(t => t.modalidad === 'gi' || t.modalidad === 'ambos' || t.gi === true);
+        } else if (filtros.modalidad === 'nogi') {
+          resultados = resultados.filter(t => t.modalidad === 'nogi' || t.modalidad === 'ambos' || t.gi === false);
+        } else if (filtros.modalidad === 'ambos') {
+          resultados = resultados.filter(t => t.modalidad === 'ambos');
+        }
+      } else if (filtros.gi !== undefined) {
+        const isGi = filtros.gi.toString() === 'true';
+        resultados = resultados.filter(t => t.gi === isGi);
+      }
+
       if (filtros.nombre) {
         const nombreLower = filtros.nombre.toLowerCase();
         resultados = resultados.filter(t => t.nombre.toLowerCase().includes(nombreLower));
