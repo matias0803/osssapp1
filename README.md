@@ -1,98 +1,124 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# BJJ Tracker — Backend
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+API REST construida con **NestJS** para el seguimiento de entrenamiento de Brazilian Jiu-Jitsu: técnicas, sesiones de entrenamiento, objetivos y gameplans. Es el backend del proyecto [BJJ Tracker](#), pensado para conectarse con un frontend en React.
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+## Stack
 
-## Description
+- **Framework:** [NestJS](https://nestjs.com/) 11 (TypeScript)
+- **Base de datos / Auth:** [Firebase](https://firebase.google.com/) — Firestore como base de datos y Firebase Auth para autenticación
+- **Validación:** `class-validator` + `class-transformer` con `ValidationPipe` global
+- **Testing:** Jest (unitario y e2e)
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+## Features principales
 
-## Project setup
+- **CRUD completo** de técnicas, entrenamientos, objetivos y gameplans, todo scoped por usuario autenticado.
+- **Autenticación con Firebase**: un `FirebaseAuthGuard` verifica el token Bearer (Firebase ID Token) en cada request y expone el usuario decodificado a los controllers.
+- **Patrón Repository con doble implementación**: cada módulo define una interfaz abstracta (`*.repository.ts`) con dos implementaciones —una en memoria y otra sobre Firestore— lo que permite testear la lógica de negocio sin depender de Firebase.
+- **Filtros de búsqueda**: los endpoints de técnicas y entrenamientos soportan query params para filtrar resultados (ej. por modalidad gi/no-gi).
+- **Validación estricta de entrada**: `ValidationPipe` global con `whitelist` y `forbidNonWhitelisted`, rechazando cualquier campo no declarado en los DTOs.
+
+## Módulos y entidades
+
+| Módulo | Entidad | Descripción |
+|---|---|---|
+| `tecnicas` | `Tecnica` | Técnica de BJJ: nombre, nota, modalidad (gi/no-gi/ambos), tags, video, técnicas conectadas |
+| `entrenamientos` | `Entrenamiento` | Sesión de entrenamiento: fecha, objetivo, técnica trabajada, repeticiones efectivas, posición atrapado |
+| `objetivos` | `Objetivo` | Meta de entrenamiento: título, tipo, estado (completado) |
+| `gameplans` | `GamePlan` | Secuencia de técnicas encadenadas para una posición o situación |
+
+## Endpoints
+
+Todos los endpoints requieren header `Authorization: Bearer <firebase_id_token>`.
+
+```
+GET    /tecnicas          Lista técnicas del usuario (soporta filtros por query)
+POST   /tecnicas          Crea una técnica
+GET    /tecnicas/:id      Obtiene una técnica
+PATCH  /tecnicas/:id      Actualiza una técnica
+DELETE /tecnicas/:id      Elimina una técnica
+
+GET    /entrenamientos          Lista entrenamientos del usuario (soporta filtros)
+POST   /entrenamientos          Registra un entrenamiento
+GET    /entrenamientos/:id      Obtiene un entrenamiento
+PATCH  /entrenamientos/:id      Actualiza un entrenamiento
+DELETE /entrenamientos/:id      Elimina un entrenamiento
+
+GET    /objetivos          Lista objetivos del usuario
+POST   /objetivos          Crea un objetivo
+GET    /objetivos/:id      Obtiene un objetivo
+PATCH  /objetivos/:id      Actualiza un objetivo
+DELETE /objetivos/:id      Elimina un objetivo
+
+GET    /gameplans          Lista gameplans del usuario
+POST   /gameplans          Crea un gameplan
+GET    /gameplans/:id      Obtiene un gameplan
+PATCH  /gameplans/:id      Actualiza un gameplan
+DELETE /gameplans/:id      Elimina un gameplan
+```
+
+## Instalación
 
 ```bash
 $ npm install
 ```
 
-## Compile and run the project
+## Variables de entorno
+
+El backend soporta dos formas de autenticar con Firebase (Admin SDK):
 
 ```bash
-# development
+# Opción A: credenciales como variables de entorno (recomendado en producción)
+FIREBASE_PROJECT_ID=tu-project-id
+FIREBASE_PRIVATE_KEY="tu-private-key"
+FIREBASE_CLIENT_EMAIL=tu-client-email
+
+# Opción B: ruta a un archivo de credenciales JSON (uso local)
+FIREBASE_CREDENTIAL_PATH=./ruta/a/credenciales.json
+
+# Puerto (opcional, por defecto 3000; inyectado automáticamente en Render/Railway)
+PORT=3000
+```
+
+## Correr el proyecto
+
+```bash
+# desarrollo
 $ npm run start
 
-# watch mode
+# modo watch
 $ npm run start:dev
 
-# production mode
+# producción
 $ npm run start:prod
 ```
 
-## Run tests
+## Tests
 
 ```bash
-# unit tests
+# unitarios
 $ npm run test
 
-# e2e tests
+# e2e
 $ npm run test:e2e
 
-# test coverage
+# cobertura
 $ npm run test:cov
 ```
 
-## Deployment
+## Estructura del proyecto
 
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
-
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
-
-```bash
-$ npm install -g @nestjs/mau
-$ mau deploy
+```
+src/
+├── auth/            # Guard de autenticación con Firebase + decorator @User()
+├── firebase/         # Inicialización del Admin SDK y conexión a Firestore
+├── tecnicas/          # Módulo de técnicas (controller, service, repository, dto, entity)
+├── entrenamientos/    # Módulo de sesiones de entrenamiento
+├── objetivos/          # Módulo de objetivos/metas
+├── gameplans/          # Módulo de gameplans
+├── app.module.ts
+└── main.ts
 ```
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+## Proyecto relacionado
 
-## Resources
-
-Check out a few resources that may come in handy when working with NestJS:
-
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
-
-## Support
-
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
-
-## Stay in touch
-
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
-
-## License
-
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+Este backend forma parte de **BJJ Tracker**, una app de seguimiento de entrenamiento de BJJ que incluye un frontend en React con heatmap de entrenamiento estilo GitHub y calculador de rachas.
