@@ -10,6 +10,7 @@ export class TecnicasMemoryRepository implements TecnicasRepository {
   private tecnicas: Tecnica[] = [
     { 
       id: '1', 
+      userId: 'test-user',
       nombre: 'Armbar Clásico', 
       nota: 'Mantener las rodillas bien juntas y los pulgares apuntando hacia arriba.', 
       gi: true, 
@@ -17,6 +18,7 @@ export class TecnicasMemoryRepository implements TecnicasRepository {
     },
     { 
       id: '2', 
+      userId: 'test-user',
       nombre: 'Mata León (Rear Naked Choke)', 
       nota: 'Esconder la mano detrás de la cabeza del oponente, no en la nuca.', 
       gi: false, 
